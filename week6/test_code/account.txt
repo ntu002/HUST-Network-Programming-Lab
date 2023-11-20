@@ -1,0 +1,7 @@
+user1 1 0
+user2 2 0
+user3 3 1
+user4 4 1
+user5 5 1
+user6 6 1
+user7 7 0

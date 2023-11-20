@@ -1,0 +1,4 @@
+user1 u1 0 
+user2 u2 1 
+user3 u3 2 
+user4 u4 0 
