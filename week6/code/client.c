@@ -40,18 +40,33 @@ int isValidPort(char *port)
     return 1;
 }
 
-int containsSpace(char *str) {
+int containsSpace(char *str)
+{
     int length = strlen(str);
-    
-    for (int i = 0; i < length; i++) {
-        if (str[i] == ' ') {
+
+    for (int i = 0; i < length; i++)
+    {
+        if (str[i] == ' ')
+        {
             return 1; // Chuỗi có chứa dấu cách
         }
     }
-    
+
     return 0; // Chuỗi không chứa dấu cách
 }
 
+int checkSpace(char str[])
+{
+    size_t l = strlen(str);
+    for (int i = 0; i < l; i++)
+    {
+        if (str[i] == ' ')
+        {
+            return 1;
+        }
+    }
+    return 0;
+}
 
 int main(int argc, char *argv[])
 {
@@ -62,16 +77,16 @@ int main(int argc, char *argv[])
     }
 
     // check if input id is valid
-    // if (!isValidIpAddress(argv[1]))
-    // {
-    //     printf("%s: Not a valid ip address!\n", argv[1]);
-    //     return 1;
-    // }
+    if (!isValidIpAddress(argv[1]))
+    {
+        printf("%s: Not a valid ip address!\n", argv[1]);
+        exit(EXIT_FAILURE);
+    }
 
     // if (!isValidPort(argv[2]))
     // {
     //     printf("%s: Not a valid port number!\n", argv[2]);
-    //     return 1;
+    //     exit(EXIT_FAILURE);
     // }
 
     int sockfd;
@@ -106,9 +121,28 @@ int main(int argc, char *argv[])
 
     // Step 4: Communicate with server
     printf("Enter username: ");
-    //fflush(stdin);
-    scanf("%s", username);
-    username[strcspn(username, "\n")] = 0;
+    fgets(username, sizeof(username), stdin);
+
+    size_t l = strlen(username);
+    if (l > 0 && username[l - 1] == '\n')
+    {
+        username[l - 1] = '\0';
+    }
+
+    printf("space: %d\n", checkSpace(username));
+
+    while (checkSpace(username))
+    {
+        printf("Username is not valid! \n");
+        printf("Please re-enter username: ");
+        fgets(username, sizeof(username), stdin);
+        size_t l = strlen(username);
+        if (l > 0 && username[l - 1] == '\n')
+        {
+            username[l - 1] = '\0';
+        }
+    }
+
     n = send(sockfd, (const char *)username, sizeof(username), 0);
     if (n < 0)
     {
@@ -128,8 +162,28 @@ int main(int argc, char *argv[])
     while (!strcmp(buffer, "Account not found"))
     {
         printf("Please re-enter username: ");
-        //fflush(stdin);
-        scanf("%s", username);
+        // fflush(stdin);
+        fgets(username, sizeof(username), stdin);
+
+        size_t l = strlen(username);
+        if (l > 0 && username[l - 1] == '\n')
+        {
+            username[l - 1] = '\0';
+        }
+
+        printf("space: %d\n", checkSpace(username));
+
+        while (checkSpace(username))
+        {
+            printf("Username is not valid! \n");
+            printf("Please re-enter username: ");
+            fgets(username, sizeof(username), stdin);
+            size_t l = strlen(username);
+            if (l > 0 && username[l - 1] == '\n')
+            {
+                username[l - 1] = '\0';
+            }
+        }
         username[strcspn(username, "\n")] = 0;
         n = send(sockfd, (const char *)username, sizeof(username), 0);
         if (n < 0)
@@ -149,13 +203,29 @@ int main(int argc, char *argv[])
     }
 
     printf("Enter password: ");
-    //fflush(stdin);
-    scanf("%s", password);
-    password[strcspn(password, "\n")] = 0;
+    fgets(password, sizeof(password), stdin);
 
-    printf("password: %s\n", password);
+    size_t l_pass = strlen(password);
+    if (l_pass > 0 && password[l_pass - 1] == '\n')
+    {
+        password[l_pass - 1] = '\0';
+    }
+
+    printf("space: %d\n", checkSpace(password));
+
+    while (checkSpace(password))
+    {
+        printf("Password is not valid! \n");
+        printf("Please re-enter password: ");
+        fgets(password, sizeof(password), stdin);
+        size_t l = strlen(password);
+        if (l > 0 && password[l - 1] == '\n')
+        {
+            password[l - 1] = '\0';
+        }
+    }
+
     n = send(sockfd, (const char *)password, sizeof(password), 0);
-    printf("n = %d\n", n);
     if (n < 0)
     {
         printf("Error!Cannot send data from sever!\n");
@@ -163,10 +233,6 @@ int main(int argc, char *argv[])
     }
 
     n = recv(sockfd, (char *)buffer, MAX_BUFF_SIZE, 0);
-     buffer[n] = '\0';
-    printf("Buffer: %s\n", buffer);
-    printf("n = %d\n", n);
-    
     if (n < 0)
     {
         printf("Error!Cannot send data from sever!\n");
@@ -179,8 +245,28 @@ int main(int argc, char *argv[])
     {
         printf("Please re-enter password: ");
         fflush(stdin);
-        scanf("%s", password);
-        password[strcspn(password, "\n")] = 0;
+        fgets(password, sizeof(password), stdin);
+
+        size_t l = strlen(password);
+        if (l > 0 && password[l - 1] == '\n')
+        {
+            password[l - 1] = '\0';
+        }
+
+        printf("space: %d\n", checkSpace(password));
+
+        while (checkSpace(password))
+        {
+            printf("Password is not valid! \n");
+            printf("Please re-enter password: ");
+            fgets(password, sizeof(password), stdin);
+            size_t l = strlen(password);
+            if (l > 0 && password[l - 1] == '\n')
+            {
+                password[l - 1] = '\0';
+            }
+        }
+
         n = send(sockfd, (const char *)password, sizeof(password), 0);
         if (n < 0)
         {
@@ -197,16 +283,17 @@ int main(int argc, char *argv[])
         buffer[n] = '\0';
         printf("Buffer: %s\n", buffer);
 
-        if (!strcmp(buffer, "Account is blocked")) {
+        if (!strcmp(buffer, "Account is blocked"))
+        {
             printf("Account is blockes!\n");
             break;
         }
     }
 
-    if (!strcmp(buffer, "OK")) {
+    if (!strcmp(buffer, "OK"))
+    {
         printf("Logged in successfully!\n");
     }
-
 
     // Step 4: Close socket
     close(sockfd);

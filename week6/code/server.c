@@ -94,11 +94,11 @@ int main(int argc, char *argv[])
     }
 
     // If the port is invalid, exit the program
-    // if (!isValidPort(argv[1]))
-    // {
-    //     printf("Invalid port number!\n");
-    //     return 1;
-    // }
+    if (!isValidPort(argv[1]))
+    {
+        printf("Invalid port number!\n");
+        exit(EXIT_FAILURE);
+    }
 
     // Get data from account.txt
     readFile();
@@ -176,12 +176,6 @@ int main(int argc, char *argv[])
         else if (pid > 0)
         {
             close(clientfd);
-            // Non-blocking wait for the child process to exit.
-            // int status;
-            // do
-            // {
-            //     waitpid(pid, &status, WNOHANG);
-            // } while (!WIFEXITED(status) && !WIFSIGNALED(status));
             continue;
         }
         else if (pid == 0)

@@ -17,7 +17,7 @@ void handle_client(int clientfd)
         char username[MAX_BUFF_SIZE];
         strcpy(username, buffer);
 
-        printf("username: %s\n", buffer);
+        printf("Buffer username: %s\n", buffer);
 
         Tree_T c;
         c = SearchUsername(username, T);
@@ -50,12 +50,12 @@ void handle_client(int clientfd)
             }
             buffer[n] = '\0';
             char password[MAX_BUFF_SIZE];
-            printf("buffer password: %s\n", buffer);
+            printf("Buffer password: %s\n", buffer);
             strcpy(password, buffer);
             // printf("Invalid count: %d\n", invalid_login_count);
 
             // If the password is not matched
-            if (strcmp(c->data.password, password) != 0)
+            while(strcmp(c->data.password, password) != 0)
             {
                 count++;
                 if (count == 3)
@@ -68,10 +68,18 @@ void handle_client(int clientfd)
                     printf("Server send failed\n");
                     exit(EXIT_FAILURE);
                 }
+                n = recv(clientfd, (char *)buffer, MAX_BUFF_SIZE, 0);
+                if (n < 0)
+                {
+                    printf("Receive failed\n");
+                    exit(EXIT_FAILURE);
+                }
+                buffer[n] = '\0';
+                char password[MAX_BUFF_SIZE];
+                printf("Buffer password: %s\n", buffer);
+                strcpy(password, buffer);
             }
-            // If matched
-            // If account is activated
-            else if (c->data.status == 1)
+            if (c->data.status == 1)
             {
                 char *ack = "OK";
                 n = send(clientfd, (const char *)ack, MAX_BUFF_SIZE, 0);
@@ -111,7 +119,6 @@ void handle_client(int clientfd)
                     printf("Server send failed\n");
                     exit(EXIT_FAILURE);
                 }
-                // printf("Invalid login count: %d\n", invalid_login_count);
                 break;
             }
         }
