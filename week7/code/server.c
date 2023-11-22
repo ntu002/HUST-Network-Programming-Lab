@@ -8,9 +8,16 @@
 #include <arpa/inet.h>
 #include <netinet/in.h>
 #include <sys/types.h>
+#include <pthread.h>
 
 #define MAX_BUFF_SIZE 255
 #define ACCOUNT_FILE "account.txt"
+
+#define LISTENQ 1
+#define MAX_CLIENT 10
+
+pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
+int num_client = 0;
 
 const int SizeMax = 255;
 
@@ -84,12 +91,11 @@ int isValidPort(char *port)
     return 1;
 }
 
-
 int main(int argc, char *argv[])
 {
     if (argc != 2)
     {
-        printf("Usage: %s <PortNumber> \n", argv[0]);
+        printf("Usage: ./server <PortNumber> \n");
         return 1;
     }
 
@@ -134,11 +140,13 @@ int main(int argc, char *argv[])
         perror("Error in binding!\n");
         exit(EXIT_FAILURE);
     }
+
     printf("[+]Binding successful!\n");
     printf("[%s:%d]\n", inet_ntoa(server_addr.sin_addr),
            ntohs(server_addr.sin_port));
 
     // Listen for incomming connections
+    listen(sockfd, 10);
     if (listen(sockfd, 10) < 0)
     {
         printf("Listen failed!\n");
@@ -146,53 +154,39 @@ int main(int argc, char *argv[])
     }
     
     printf("[+]Server is running... Waiting for connections.\n");
+    
+    // Accept and incoming connection
 
+    int client_sock;
     socklen_t len = sizeof(client_addr);
-    pid_t pid = fork();
 
-    while (1)
-    {
-        // Accept a connection
-        int clientfd;
-        clientfd = accept(sockfd, (struct sockaddr *)&client_addr, &len);
-        if (clientfd < 0)
-        {
-            perror("Error: \n");
-            // exit(EXIT_FAILURE);
+    while(1) {
+        client_sock = accept(sockfd, (struct sockaddr *)&client_addr, &len);
+
+        if (client_sock < 0) {
+            perror("Accept failed");
+            exit(EXIT_FAILURE);
         }
 
-        printf("Accept successful!\n");
-        printf("[%s:%d]\n", inet_ntoa(client_addr.sin_addr),
-               ntohs(client_addr.sin_port));
+        printf("[+]Accept successful!\n");
+        printf("[%s:%d]\n", inet_ntoa(client_addr.sin_addr), ntohs(client_addr.sin_port));
 
-        // Fork a child process to handle the client connection.
-        pid = fork();
-        if (pid == -1)
-        {
-            close(clientfd);
-            printf("Fork failed!\n");
-            exit(1);
+        pthread_t ptid;
+        if(pthread_create(&ptid, NULL, handle_client, (void*)&client_sock) < 0) {
+            perror("Could not create thread");
+            exit(EXIT_FAILURE);
         }
-        else if (pid > 0)
-        {
-            close(clientfd);
-            continue;
-        }
-        else if (pid == 0)
-        {
-            // Close the original socket in the child process
-            close(sockfd);
 
-            // Handle the client
-            handle_client(clientfd);
-
-            // Terminate the child process
-            exit(EXIT_SUCCESS);
-        }
+        pthread_detach(ptid);
     }
 
+    if (client_sock < 0) {
+        perror("Accept failed");
+        exit(EXIT_FAILURE);
+    }
     // Close the socket
     close(sockfd);
+    close(client_sock);
 
     return 0;
 }

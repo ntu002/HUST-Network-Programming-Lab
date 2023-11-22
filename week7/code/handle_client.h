@@ -1,8 +1,19 @@
-void handle_client(int clientfd)
+void *handle_client(void *sockfd)
 {
     socklen_t n;
     char buffer[MAX_BUFF_SIZE];
     int count = 0;
+    int clientfd = *(int *)sockfd;
+    
+    pthread_mutex_lock(&mutex);
+    if (num_client < MAX_CLIENT) {
+        num_client++;
+    } else {
+        char err_msg[] = "Server is full. Try again later. \n";
+        send(clientfd, err_msg, MAX_BUFF_SIZE, 0);
+        close(clientfd);
+    }
+    pthread_mutex_unlock(&mutex);
 
     while (1)
     {
@@ -55,7 +66,7 @@ void handle_client(int clientfd)
             // printf("Invalid count: %d\n", invalid_login_count);
 
             // If the password is not matched
-            while(strcmp(c->data.password, password) != 0)
+            while (strcmp(c->data.password, password) != 0)
             {
                 count++;
                 if (count == 3)
