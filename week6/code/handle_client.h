@@ -1,3 +1,5 @@
+
+
 void handle_client(int clientfd)
 {
     socklen_t n;
@@ -55,9 +57,10 @@ void handle_client(int clientfd)
             // printf("Invalid count: %d\n", invalid_login_count);
 
             // If the password is not matched
-            while(strcmp(c->data.password, password) != 0)
+            while (strcmp(c->data.password, password) != 0)
             {
                 count++;
+                printf("count: %d\n", count);
                 if (count == 3)
                     break;
 
@@ -79,7 +82,21 @@ void handle_client(int clientfd)
                 printf("Buffer password: %s\n", buffer);
                 strcpy(password, buffer);
             }
-            if (c->data.status == 1)
+
+            if (count == 3)
+            {
+                c->data.status = 0;
+                // Send message
+                char *ack = "Account is blocked";
+                n = send(clientfd, (const char *)ack, MAX_BUFF_SIZE, 0);
+                if (n < 0)
+                {
+                    printf("Server send failed\n");
+                    exit(EXIT_FAILURE);
+                }
+                break;
+            }
+            else if (c->data.status == 1)
             {
                 char *ack = "OK";
                 n = send(clientfd, (const char *)ack, MAX_BUFF_SIZE, 0);
@@ -102,21 +119,6 @@ void handle_client(int clientfd)
                 if (n < 0)
                 {
                     printf("Send failed\n");
-                    exit(EXIT_FAILURE);
-                }
-                break;
-            }
-
-            if (count == 3)
-            {
-                c->data.status = 0;
-
-                // Send message
-                char *ack = "Account is blocked";
-                n = send(clientfd, (const char *)ack, MAX_BUFF_SIZE, 0);
-                if (n < 0)
-                {
-                    printf("Server send failed\n");
                     exit(EXIT_FAILURE);
                 }
                 break;

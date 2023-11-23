@@ -35,11 +35,10 @@ Tree_T T;
 
 eType *a;
 int total;
+FILE *file1, *file2;
 
 #include "linklist.h"
 #include "handle_client.h"
-
-FILE *file1, *file2;
 
 void readFile()
 {
@@ -182,8 +181,8 @@ int main(int argc, char *argv[])
         {
             // Close the original socket in the child process
             close(sockfd);
-
             // Handle the client
+    
             handle_client(clientfd);
 
             // Terminate the child process

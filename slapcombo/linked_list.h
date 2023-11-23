@@ -144,21 +144,6 @@ void inorderprint(Tree_T T)
     }
 }
 
-void writeFile(FILE *file, Tree_T T)
-{
-    if (file == NULL) {
-        printf("Không thể mở tệp tin.\n");
-        return;
-    }
-
-    if (T != NULL)
-    {
-        inorderprint(T->left);
-        fprintf(file, "%s\t%s\t%d\n", T->data.username, T->data.password, T->data.status);
-        inorderprint(T->right);
-    }
-}
-
 eType deletemin(Tree_T *T)
 {
     eType k;
