@@ -65,11 +65,11 @@ void readFile()
     for (int i = 0; i < total + 1; i++)
     {
         eType tmp;
-        float a, b;
-        int ss;
         fscanf(file1, "%s\t%s\t%d\t%d\t%d", tmp.username, tmp.password, &tmp.blood, &tmp.power, &tmp.gold);
         InsertNode(tmp, &T);
     }
+
+    inorderprint(T);
 }
 
 int isValidPort(char *port)

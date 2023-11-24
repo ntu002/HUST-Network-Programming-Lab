@@ -11,6 +11,14 @@
 
 #define MAX_BUFF_SIZE 255
 
+typedef struct
+{
+    int id;
+    int blood;
+    int power;
+    int gold;
+} eType;
+
 int isValidIpAddress(char *ipAddress)
 {
     struct sockaddr_in sa;
@@ -68,9 +76,16 @@ int checkSpace(char str[])
     return 0;
 }
 
+int randomInt(int minN, int maxN)
+{
+    return minN + rand() % (maxN + 1 - minN);
+}
+
 void singIn(int sockfd);
 
 void chooseGame(int sockfd);
+
+void playWithComputer(int sockfd, eType *user);
 
 int main(int argc, char *argv[])
 {
@@ -121,6 +136,7 @@ int main(int argc, char *argv[])
     singIn(sockfd);
     chooseGame(sockfd);
 
+
     // Step 4: Close socket
     close(sockfd);
     return 0;
@@ -132,7 +148,7 @@ void singIn(int sockfd)
     char username[MAX_BUFF_SIZE];
     char password[MAX_BUFF_SIZE];
     char buffer[MAX_BUFF_SIZE];
-    socklen_t n, len;
+    socklen_t n;
 
     // Step 4: Communicate with server
     printf("Enter username: ");
@@ -185,7 +201,7 @@ void chooseGame(int sockfd)
 {
     char message[MAX_BUFF_SIZE];
     char buffer[MAX_BUFF_SIZE];
-    socklen_t n, len;
+    socklen_t n;
 
     // Step 4: Communicate with server
     printf("Enter choose how to play: ");
@@ -215,6 +231,7 @@ void chooseGame(int sockfd)
 
     if (!strcmp(buffer, "Choose: Play with computer"))
     {
+        eType user;
         n = recv(sockfd, (char *)buffer, MAX_BUFF_SIZE, 0);
         if (n < 0)
         {
@@ -224,6 +241,7 @@ void chooseGame(int sockfd)
 
         buffer[n] = '\0';
         printf("Blood: %s\n", buffer);
+        user.blood = atoi(buffer);
 
         n = recv(sockfd, (char *)buffer, MAX_BUFF_SIZE, 0);
         if (n < 0)
@@ -234,6 +252,7 @@ void chooseGame(int sockfd)
 
         buffer[n] = '\0';
         printf("Power: %s\n", buffer);
+        user.power = atoi(buffer);
 
         n = recv(sockfd, (char *)buffer, MAX_BUFF_SIZE, 0);
         if (n < 0)
@@ -244,8 +263,73 @@ void chooseGame(int sockfd)
 
         buffer[n] = '\0';
         printf("Gold: %s\n", buffer);
+        user.gold = atoi(buffer);
+        playWithComputer(sockfd, &user);
     }
     else if (!strcmp(buffer, "Choose: Play with people"))
     {
+    }
+}
+
+void playWithComputer(int sockfd, eType *user)
+{
+    int blood = (*user).blood;
+    int power = (*user).power;
+    int gold = (*user).gold;
+    char message[MAX_BUFF_SIZE];
+    char buffer[MAX_BUFF_SIZE];
+    socklen_t n;
+
+    printf("user: %d %d %d\n", blood, power, gold);
+        
+
+    while (blood > 0)
+    {
+        int step = randomInt(0, power);
+
+        sprintf(message, "%d\n", step);
+        printf("Power: %s\n", message);
+        size_t l = strlen(message);
+        if (l > 0 && message[l - 1] == '\n')
+        {
+            message[l - 1] = '\0';
+        }
+        
+        n = send(sockfd, (const char *)message, sizeof(message), 0);
+        if (n < 0)
+        {
+            printf("Error!Cannot send data from sever!\n");
+            exit(EXIT_FAILURE);
+        }
+
+        n = recv(sockfd, (char *)buffer, MAX_BUFF_SIZE, 0);
+        if (n < 0)
+        {
+            printf("Error!Cannot send data from sever!\n");
+            exit(EXIT_FAILURE);
+        }
+        if (strcmp(buffer, "Fail") == 0)
+        {
+            printf("You win!\n");
+            break;
+        }
+        buffer[n] = '\0';
+        int re = atoi(buffer);
+        blood = blood - re;
+
+        if (blood < 0)
+        {
+            char *ack = "Fail";
+            n = send(sockfd, (const char *)ack, sizeof(ack), 0);
+            if (n < 0)
+            {
+                printf("Error!Cannot send data from sever!\n");
+                exit(EXIT_FAILURE);
+            }
+            printf("You fail!\n");
+            break;
+        }
+
+        printf("Blood: %d\n", blood);
     }
 }

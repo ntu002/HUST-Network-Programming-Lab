@@ -127,7 +127,7 @@ void inorderprint(Tree_T T)
     if (T != NULL)
     {
         inorderprint(T->left);
-        //printf("%-20s%-10s%-10d\n\n", T->data.username, T->data.password, T->data.status);
+        printf("%-20s%-10s%-10d%-10d%-10d\n\n", T->data.username, T->data.password, T->data.blood, T->data.power, T->data.gold);
         inorderprint(T->right);
     }
 }
