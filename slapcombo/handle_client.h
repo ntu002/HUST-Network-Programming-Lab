@@ -19,6 +19,9 @@ void *handle_client(void *sockfd)
 
     while (1)
     {
+        /*
+        Sign in
+        */
         // Receive the username from client
         n = recv(clientfd, (char *)buffer, MAX_BUFF_SIZE, 0);
         buffer[n] = '\0';
@@ -49,6 +52,50 @@ void *handle_client(void *sockfd)
                     exit(EXIT_FAILURE);
                 }
             }
+        }
+
+        /*
+        Lựa chọn cách chơi:
+        Nhập message: chơi với người - chơi với máy
+        chơi với máy: 1
+        chơi với người: 2
+        */
+
+        // Receive the choose how to play from client
+        n = recv(clientfd, (char *)buffer, MAX_BUFF_SIZE, 0);
+        buffer[n] = '\0';
+        char chooseGame[MAX_BUFF_SIZE];
+        strcpy(chooseGame, buffer);
+
+        char cnt[MAX_BUFF_SIZE];
+        printf("Buffer choose how to play: %s\n", buffer);
+        if (strcmp(chooseGame, "1") == 0) {
+            sprintf(cnt, "%d\n", c->data.blood);
+                n = send(clientfd, (const char *)cnt, MAX_BUFF_SIZE, 0);
+                if (n < 0)
+                {
+                    printf("Server send failed\n");
+                    exit(EXIT_FAILURE);
+                }
+
+            sprintf(cnt, "%d\n", c->data.power);
+                n = send(clientfd, (const char *)cnt, MAX_BUFF_SIZE, 0);
+                if (n < 0)
+                {
+                    printf("Server send failed\n");
+                    exit(EXIT_FAILURE);
+                }
+            
+            sprintf(cnt, "%d\n", c->data.gold);
+                n = send(clientfd, (const char *)cnt, MAX_BUFF_SIZE, 0);
+                if (n < 0)
+                {
+                    printf("Server send failed\n");
+                    exit(EXIT_FAILURE);
+                }
+
+        } else if (strcmp(chooseGame, "2") == 0) {
+            
         }
     }
 }

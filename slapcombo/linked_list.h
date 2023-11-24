@@ -114,20 +114,8 @@ void InsertNode(eType x, Tree_T *Root)
         (*Root)->data = x;
         (*Root)->left = NULL;
         (*Root)->right = NULL;
-        (*Root)->data.count = 0;
-        if ((*Root)->data.status == 2)
-            strcpy((*Root)->data.code, "20205135");
-        // (*Root)->data.inp[0] = inp;
-        // (*Root)->data.out[0] = out;
     }
     else
-        // if (strcmp(x.username, (*Root)->data.username) == 0)
-        // {
-        //     (*Root)->data.count++;
-        //     // (*Root)->data.inp[(*Root)->data.count] = inp;
-        //     // (*Root)->data.out[(*Root)->data.count] = out;
-        // }
-
         if (strcmp(x.username, (*Root)->data.username) < 0)
             InsertNode(x, &(*Root)->left);
         else if (strcmp(x.username, (*Root)->data.username) > 0)
@@ -139,7 +127,7 @@ void inorderprint(Tree_T T)
     if (T != NULL)
     {
         inorderprint(T->left);
-        printf("%-20s%-10s%-10d\n\n", T->data.username, T->data.password, T->data.status);
+        //printf("%-20s%-10s%-10d\n\n", T->data.username, T->data.password, T->data.status);
         inorderprint(T->right);
     }
 }

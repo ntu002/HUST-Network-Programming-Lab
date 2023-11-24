@@ -1,4 +1,4 @@
-user1 1 
-user2 2 
-user3 2 
-user4 4 
+user1 1 100 500 10
+user2 2 1 1 1
+user3 2 1 1 1
+user4 4 1 1 1

@@ -68,7 +68,9 @@ int checkSpace(char str[])
     return 0;
 }
 
-void singIn();
+void singIn(int sockfd);
+
+void chooseGame(int sockfd);
 
 int main(int argc, char *argv[])
 {
@@ -117,13 +119,15 @@ int main(int argc, char *argv[])
     }
 
     singIn(sockfd);
-    
+    chooseGame(sockfd);
+
     // Step 4: Close socket
     close(sockfd);
     return 0;
 }
 
-void singIn(int sockfd) {
+void singIn(int sockfd)
+{
 
     char username[MAX_BUFF_SIZE];
     char password[MAX_BUFF_SIZE];
@@ -146,7 +150,6 @@ void singIn(int sockfd) {
         exit(EXIT_FAILURE);
     }
 
-
     printf("Enter password: ");
     fgets(password, sizeof(password), stdin);
 
@@ -162,14 +165,13 @@ void singIn(int sockfd) {
         exit(EXIT_FAILURE);
     }
 
-
     n = recv(sockfd, (char *)buffer, MAX_BUFF_SIZE, 0);
     if (n < 0)
     {
         printf("Error!Cannot send data from sever!\n");
         exit(EXIT_FAILURE);
     }
-    
+
     buffer[n] = '\0';
     printf("Buffer: %s\n", buffer);
 
@@ -177,5 +179,73 @@ void singIn(int sockfd) {
     {
         printf("Logged in successfully!\n");
     }
+}
 
+void chooseGame(int sockfd)
+{
+    char message[MAX_BUFF_SIZE];
+    char buffer[MAX_BUFF_SIZE];
+    socklen_t n, len;
+
+    // Step 4: Communicate with server
+    printf("Enter choose how to play: ");
+    fgets(message, sizeof(message), stdin);
+
+    size_t l = strlen(message);
+    if (l > 0 && message[l - 1] == '\n')
+    {
+        message[l - 1] = '\0';
+    }
+    n = send(sockfd, (const char *)message, sizeof(message), 0);
+    if (n < 0)
+    {
+        printf("Error!Cannot send data from sever!\n");
+        exit(EXIT_FAILURE);
+    }
+
+    n = recv(sockfd, (char *)buffer, MAX_BUFF_SIZE, 0);
+    if (n < 0)
+    {
+        printf("Error!Cannot send data from sever!\n");
+        exit(EXIT_FAILURE);
+    }
+
+    buffer[n] = '\0';
+    printf("Buffer: %s\n", buffer);
+
+    if (!strcmp(buffer, "Choose: Play with computer"))
+    {
+        n = recv(sockfd, (char *)buffer, MAX_BUFF_SIZE, 0);
+        if (n < 0)
+        {
+            printf("Error!Cannot send data from sever!\n");
+            exit(EXIT_FAILURE);
+        }
+
+        buffer[n] = '\0';
+        printf("Blood: %s\n", buffer);
+
+        n = recv(sockfd, (char *)buffer, MAX_BUFF_SIZE, 0);
+        if (n < 0)
+        {
+            printf("Error!Cannot send data from sever!\n");
+            exit(EXIT_FAILURE);
+        }
+
+        buffer[n] = '\0';
+        printf("Power: %s\n", buffer);
+
+        n = recv(sockfd, (char *)buffer, MAX_BUFF_SIZE, 0);
+        if (n < 0)
+        {
+            printf("Error!Cannot send data from sever!\n");
+            exit(EXIT_FAILURE);
+        }
+
+        buffer[n] = '\0';
+        printf("Gold: %s\n", buffer);
+    }
+    else if (!strcmp(buffer, "Choose: Play with people"))
+    {
+    }
 }

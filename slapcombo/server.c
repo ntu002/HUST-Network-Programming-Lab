@@ -25,10 +25,10 @@ typedef struct
 {
     char username[SizeMax];
     char password[SizeMax];
-    int status;
-    char code[SizeMax];
-    int count;
-    int check;
+    int blood;
+    int power;
+    int gold;
+
 } eType;
 
 typedef struct nodeType
@@ -67,7 +67,7 @@ void readFile()
         eType tmp;
         float a, b;
         int ss;
-        fscanf(file1, "%s\t%s", tmp.username, tmp.password);
+        fscanf(file1, "%s\t%s\t%d\t%d\t%d", tmp.username, tmp.password, &tmp.blood, &tmp.power, &tmp.gold);
         InsertNode(tmp, &T);
     }
 }
