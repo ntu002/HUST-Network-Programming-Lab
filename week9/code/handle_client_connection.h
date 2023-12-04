@@ -1,57 +1,57 @@
-char last_username_signed_in[MAX_BUFF_SIZE];
-char username_signin[MAX_BUFF_SIZE];
-char username[MAX_BUFF_SIZE], password[MAX_BUFF_SIZE];
-int sign_in_err_flag = 0;
-int client_flag, server_flag, n;
-char ack[MAX_BUFF_SIZE];
-
-
 int getInfo(char *buffer, char *username, char *password, int *client_flag);
-
 int assignFlag(char *buff, int *server_flag);
-
 void passwordSeparate(char *newpass);
-
-int passwordFormatCheck(char *password);
-
-void login(const char *filename,
-           char *username, char *password, char *ack,
+bool passwordFormatCheck(char *password);
+void login(LinkedList *userList, const char *filename,
+           char *username, char *password, char *response,
            char *last_username_signed_in, int *sign_in_error_flag, int *server_flag);
-
-void changePassword(const char *filename,
+void changePassword(LinkedList *userList, const char *filename,
                     char *username, char *newpass,
-                    char *ack, int *server_flag);
+                    char *response, int *server_flag);
 
 
-int handle_client(int socket_desc)
+int handle_client(int socket_desc, int rcvBytes)
 {
     int client_sock = socket_desc;
 
-    getInfo(buffer, username, password, &client_flag);
-    printf("Client input: %s - %s\n", username, password);
+    // rcvBytes = recv(client_sock, buff, sizeof(buff), 0);
 
-    // if (client_flag == 0)
-    // {
-    //     login(file, username, password, buffer, last_username_signed_in, &sign_in_err_flag, &server_flag);
-    // }
-    // else
-    // {
-    //     changePassword(file, username, password, buffer, &server_flag);
-    // }
-
-    // assignFlag(buffer, &server_flag);
-
-    n = send(client_sock, buffer, sizeof(buffer), 0);
-    if (n < 0)
+    if (rcvBytes < 0)
     {
         perror("Error: ");
         return 0;
     }
-    //writeAccountsToFile(userList, filename);
+    if (rcvBytes == 0)
+    {
+        printf("Lost connection from client.\n");
+        return 0;
+    }
+    buffer[rcvBytes] = '\0';
+
+    getInfo(buffer, username, password, &client_flag);
+    printf("Client input: %s - %s\n", username, password);
+
+    if (client_flag == 0)
+    {
+        login(userList, filename, username, password, buffer, last_username_signed_in, &sign_in_error_flag, &server_flag);
+    }
+    else
+    {
+        changePassword(userList, filename, username, password, buffer, &server_flag);
+    }
+
+    assignFlag(buffer, &server_flag);
+
+    sendBytes = send(client_sock, buffer, sizeof(buffer), 0);
+    printf("%s\n", buffer);
+    if (sendBytes < 0)
+    {
+        perror("Error: ");
+        return 0;
+    }
 
     return 0;
 }
-
 
 int getInfo(char *buffer, char *username, char *password, int *client_flag)
 {
@@ -105,7 +105,7 @@ void passwordSeparate(char *newpass)
     return;
 }
 
-int passwordFormatCheck(char *password)
+bool passwordFormatCheck(char *password)
 {
     int length = strlen(password);
     for (int i = 0; i < length; i++)
@@ -114,60 +114,59 @@ int passwordFormatCheck(char *password)
               (password[i] >= 'a' && password[i] <= 'z') ||
               (password[i] >= '0' && password[i] <= '9')))
         {
-            return 0;
+            return false;
         }
     }
-    return 1;
+    return true;
 }
 
-void login(const char *filename,
-           char *username, char *password, char *ack,
+void login(LinkedList *userList, const char *filename,
+           char *username, char *password, char *response,
            char *last_username_signed_in, int *sign_in_error_flag, int *server_flag)
 {
     int max_attempt = 3;
     *server_flag = 1;
-    Tree_T c;
-    c = SearchUsername(username, T);
-    if (c == NULL)
+    Account *user = findAccount(userList, username);
+    if (user == NULL)
     {
-        strcmp(ack, "Account not found");
-        return;
-    } else 
-    if (c->data.status == 0)
-    {
-        strcmp(ack, "Account is blocked!");
+        strcpy(response, "Account does not exist!");
         return;
     }
-    if (strcmp(c->data.password, password) == 0)
+    if (user->status == 0)
     {
-        if (c->data.status == 1)
+        strcpy(response, "Account is blocked!");
+        return;
+    }
+    if (strcmp(user->password, password) == 0)
+    {
+        if (user->status == 1)
         {
-            strcmp(ack, "OK");
+            strcpy(response, "OK");
             *server_flag = 0;
             return;
         }
-        else if (c->data.status == 0)
+        else if (user->status == 0)
         {
-            strcmp(ack, "Account is blocked!");
+            strcpy(response, "Account is blocked!");
             return;
         }
         else
         {
-            strcmp(ack, "Account is not ready!");
+            strcpy(response, "Account is not ready!");
             return;
         }
     }
     else
     {
         *sign_in_error_flag += 1;
-        sprintf(ack, "Wrong password, %d/%i tries attempted!", *sign_in_error_flag, max_attempt);
+        sprintf(response, "Wrong password, %d/%i tries attempted!", *sign_in_error_flag, max_attempt);
         if (strcmp(last_username_signed_in, username) == 0)
         {
             if (*sign_in_error_flag >= max_attempt)
             {
-                strcpy(ack, "Account is blocked!");
-                c->data.status = 0;
-                //writeAccountsToFile(userList, filename);
+                strcpy(response, "Account is blocked!");
+                user->status = 0;
+                writeAccountsToFile(userList, filename);
             }
         }
         else
@@ -180,47 +179,45 @@ void login(const char *filename,
     return;
 }
 
-void changePassword(const char *filename,
+void changePassword(LinkedList *userList, const char *filename,
                     char *username, char *newpass,
-                    char *ack, int *server_flag)
+                    char *response, int *server_flag)
 {
     *server_flag = 3;
 
     if (strcmp(newpass, "bye") == 0)
     {
-        strcpy(ack, "Goodbye ");
-        strcat(ack, username);
+        strcpy(response, "Goodbye ");
+        strcat(response, username);
         *server_flag = 4;
         return;
     }
 
-    Tree_T c = SearchUsername(username, T);
-    if (c == NULL)
+    Account *account = findAccount(userList, username);
+    if (account == NULL)
     {
-        strcpy(ack, "Account does not exist");
+        strcpy(response, "Account does not exist");
         return;
     }
 
     if (!passwordFormatCheck(newpass))
     {
-        strcpy(ack, "Error: Wrong password format - letters and numbers only!");
+        strcpy(response, "Error: Wrong password format - letters and numbers only!");
         return;
     }
-    else if (strcmp(c->data.password, newpass) == 0)
+    else if (strcmp(account->password, newpass) == 0)
     {
-        strcpy(ack, "Error: New password must be different from current password!");
+        strcpy(response, "Error: New password must be different from current password!");
         return;
     }
     else
     {
         *server_flag = 2;
-        strcpy(c->data.password, newpass);
-        //writeAccountsToFile(T, filename);
+        strcpy(account->password, newpass);
+        writeAccountsToFile(userList, filename);
         passwordSeparate(newpass);
-        strcpy(ack, newpass);
+        strcpy(response, newpass);
         return;
     }
     return;
 }
-
-

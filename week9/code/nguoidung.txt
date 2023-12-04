@@ -1,0 +1,6 @@
+user1 x 0
+user2 o 1
+user3 o 1
+user4 x 0 
+user5 o 1
+user6 o 1
