@@ -1,9 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <unistd.h>
-#include <ctype.h>
-#include <netdb.h>
 #include <stdbool.h>
 #include <arpa/inet.h>
 #include <sys/socket.h>
@@ -15,30 +12,16 @@
 #define MAX_BUFF_SIZE 255
 #define CONNECTION_LIMIT 10
 
-typedef struct
-{
-    char username[MAX_BUFF_SIZE];
-    char password[MAX_BUFF_SIZE];
-    int status;
-} eType;
+#include "linked_list.h"
 
-typedef struct nodeType
-{
-    eType data;
-    struct nodeType *left, *right;
-} node_Type;
-
-typedef node_Type *Tree_T;
-Tree_T T;
-
-#include "linklist.h"
-
+LinkedList *userList;
 const char *filename = "nguoidung.txt";
 char usernameSignIn[MAX_BUFF_SIZE];
 char last_username_signed_in[MAX_BUFF_SIZE];
 char username[MAX_BUFF_SIZE];
 char password[MAX_BUFF_SIZE];
-int client_flag, server_flag;
+int client_flag;
+int server_flag;
 int sign_in_error_flag = 0;
 int server_socket, sendBytes;
 char buffer[MAX_BUFF_SIZE];
@@ -53,10 +36,10 @@ int main(int argc, char *argv[])
         return 1;
     }
     int port = atoi(argv[1]);
-    
-    readFile(filename);
+    userList = createLinkedList();
+    readAccountsFromFile(userList, filename);
 
-    struct sockaddr_in server_addr, client_addr;
+    struct sockaddr_in server_address, client_address;
     struct pollfd fds[CONNECTION_LIMIT + 1];
     int nfds = 1;
 
@@ -74,35 +57,30 @@ int main(int argc, char *argv[])
         return 0;
     }
 
-    memset(&server_addr, 0, sizeof(server_addr));
-    memset(&client_addr, 0, sizeof(client_addr));
-    // Initialize server address
-    server_addr.sin_family = AF_INET;
-    server_addr.sin_addr.s_addr = htonl(INADDR_ANY);
-    server_addr.sin_port = htons(port);
+    bzero(&server_address, sizeof(server_address));
+    server_address.sin_family = AF_INET;
+    server_address.sin_addr.s_addr = htonl(INADDR_ANY);
+    server_address.sin_port = htons(port);
 
-    // Bind ther server socket
-    if (bind(server_socket, (struct sockaddr *)&server_addr, sizeof(server_addr)))
+    if (bind(server_socket, (struct sockaddr *)&server_address, sizeof(server_address)))
     {
         perror("Error: ");
         return 0;
     }
 
-    // Listen for incomming connections
     if (listen(server_socket, CONNECTION_LIMIT) == -1)
     {
         perror("Listen");
         return 1;
     }
 
-    printf("[+]Server is running... Waiting for connections.\n");
-
     // Initialize the pollfd structure
     memset(fds, 0, sizeof(fds));
     fds[0].fd = server_socket;
     fds[0].events = POLLIN;
 
-    // Accept and incoming connection
+    printf("Server started successfully!\n");
+
     while (1)
     {
         if (poll(fds, nfds, -1) < 0)
@@ -113,16 +91,16 @@ int main(int argc, char *argv[])
 
         if (fds[0].revents & POLLIN)
         {
-            socklen_t addrlen = sizeof(client_addr);
-            int new_socket = accept(server_socket, (struct sockaddr *)&client_addr, &addrlen);
+            socklen_t addrlen = sizeof(client_address);
+            int new_socket = accept(server_socket, (struct sockaddr *)&client_address, &addrlen);
             if (new_socket < 0)
             {
                 perror("accept");
                 continue;
             }
 
-            printf("[+]Accept successful!!!\n");
-            printf("[%s:%d]\n\n", inet_ntoa(client_addr.sin_addr), ntohs(client_addr.sin_port));
+            printf("New connection, socket fd is %d, ip is: %s, port: %d\n",
+                   new_socket, inet_ntoa(client_address.sin_addr), ntohs(client_address.sin_port));
 
             for (int i = 1; i <= CONNECTION_LIMIT; i++)
             {
@@ -143,7 +121,7 @@ int main(int argc, char *argv[])
                 int n = recv(fds[i].fd, buffer, sizeof(buffer), 0);
                 if (n <= 0)
                 {
-                    printf("[+]Server: Client disconnected - fd %d\n", fds[i].fd);
+                    printf("Client disconnected, fd %d\n", fds[i].fd);
                     close(fds[i].fd);
                     fds[i].fd = 0;
                 }
@@ -163,7 +141,7 @@ int main(int argc, char *argv[])
         }
     }
 
-    freeTree(T);
+    freeLinkedList(userList);
     close(server_socket);
     return 0;
 }

@@ -8,6 +8,7 @@
 
 #define MAX_BUFF_SIZE 255
 
+int isValidIpAddress(char *ipAddress);
 int login(char *username, char *password);
 int changePassword(char *new_password);
 int changeClientFlag(char *username, char *password, char *buffer, int client_flag);
@@ -22,31 +23,41 @@ int main(int argc, char *argv[])
         return 1;
     }
 
-    char *server_ip = argv[1];
-    int port = atoi(argv[2]);
+    // check if input id is valid
+    if (!isValidIpAddress(argv[1]))
+    {
+        printf("%s: Not a valid ip address!\n", argv[1]);
+        exit(EXIT_FAILURE);
+    }
 
     int client_socket;
     char buffer[MAX_BUFF_SIZE];
-    struct sockaddr_in server_address;
+    struct sockaddr_in server_addr;
 
     int client_flag = 0;
     int server_flag;
 
+    // Step 1: Construct socket
     if ((client_socket = socket(AF_INET, SOCK_STREAM, 0)) < 0)
     {
-        perror("Error: ");
-        return 0;
+        printf("Create TCP socket failed!\n");
+        exit(EXIT_FAILURE);
     }
 
-    bzero(&server_address, sizeof(server_address));
-    server_address.sin_family = AF_INET;
-    server_address.sin_addr.s_addr = inet_addr(server_ip);
-    server_address.sin_port = htons(port);
+    char *server_ip = argv[1];
+    int port = atoi(argv[2]);
+    // Step 2: Specify server address
+    memset(&server_addr, 0, sizeof(server_addr));
 
-    if (connect(client_socket, (struct sockaddr *)&server_address, sizeof(server_address)) == -1)
+    server_addr.sin_family = AF_INET;
+    server_addr.sin_addr.s_addr = inet_addr(server_ip);
+    server_addr.sin_port = htons(port);
+
+    // Step 3: Request to connect server
+    if (connect(client_socket, (struct sockaddr *)&server_addr, sizeof(server_addr)) == -1)
     {
-        perror("Connect error: ");
-        return 1;
+        printf("\nError! Can not connect to sever!\n");
+        exit(EXIT_FAILURE);
     }
 
     char username[MAX_BUFF_SIZE];
@@ -54,6 +65,7 @@ int main(int argc, char *argv[])
     char new_password[MAX_BUFF_SIZE];
     int n;
 
+    // Step 4: Communicate with server
     while (1)
     {
         if (client_flag == 1 && changePassword(new_password) == -1)
@@ -66,20 +78,27 @@ int main(int argc, char *argv[])
             return 0;
         }
 
-        changeClientFlag(username, (client_flag == 1) ? new_password : password, buffer, client_flag);
+        if (client_flag == 1)
+        {
+            changeClientFlag(username, new_password, buffer, client_flag);
+        }
+        else
+        {
+            changeClientFlag(username, password, buffer, client_flag);
+        }
 
         n = send(client_socket, buffer, sizeof(buffer), 0);
         if (n < 0)
         {
-            perror("Error: ");
-            return 0;
+            printf("Error!Cannot send data from sever!\n");
+            exit(EXIT_FAILURE);
         }
 
         n = recv(client_socket, buffer, sizeof(buffer), 0);
         if (n < 0)
         {
-            perror("Error: ");
-            return 0;
+            printf("Error!Cannot send data from sever!\n");
+            exit(EXIT_FAILURE);
         }
 
         if (n == 0)
@@ -92,25 +111,40 @@ int main(int argc, char *argv[])
 
         getInfo(buffer, &server_flag);
 
-        if (server_flag == 0) // login successfully
+        // login successfully
+        if (server_flag == 0) 
         {
             client_flag = 1;
         }
-        else if (server_flag == 2) // change password
+        else // change password
+         if (server_flag == 2) 
         {
             decodePassword(buffer);
         }
-        else if (server_flag == 4) // signed out
+        else // signed out
+        if (server_flag == 4) 
         {
             client_flag = 0;
         }
 
-        printf("\nReply from server: %s\n\n", buffer);
+        printf("\n[+]Reply from server: %s\n\n", buffer);
+        if (strstr(buffer, "Goodbye") != NULL)
+            break;
     }
+    
     close(client_socket);
     return 0;
 }
 
+int isValidIpAddress(char *ipAddress)
+{
+    struct sockaddr_in sa;
+    int result = inet_pton(AF_INET, ipAddress, &(sa.sin_addr));
+    if (result != 0)
+        return 1;
+    else
+        return 0;
+}
 
 int login(char *username, char *password)
 {
@@ -177,4 +211,3 @@ void decodePassword(char *buffer)
         }
     }
 }
-

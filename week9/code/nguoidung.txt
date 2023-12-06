@@ -4,3 +4,5 @@ user3 o 1
 user4 x 0 
 user5 o 1
 user6 o 1
+user7 123 1
+user8 Aaa 0
